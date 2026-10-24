@@ -12,7 +12,7 @@
 bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprobe/main/install.sh)
 ```
 
-首次确认后脚本会从 GitHub 下载源码，并保存本机菜单命令 `vpsprobe`。菜单可选择安装面板、安装并连接本机探针、探针管理、状态查看、安装 Docker/Compose（Debian/Ubuntu）及更新源码。再次打开菜单运行 `sudo vpsprobe`。入口源码可先在仓库中审阅；它是下载入口，完整程序仍在仓库中。
+首次确认后脚本会从 GitHub 下载源码，并保存本机菜单命令 `vpsprobe`。菜单可选择安装面板、安装本机探针、探针管理、状态查看、安装 Docker/Compose（Debian/Ubuntu）及更新源码。再次打开菜单运行 `sudo vpsprobe`。入口源码可先在仓库中审阅；它是下载入口，完整程序仍在仓库中。
 
 ## 在 VPS 部署面板
 
@@ -54,7 +54,7 @@ docker compose down
 bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprobe/main/install.sh)
 ```
 
-输入 `https://你的域名`、绑定码和机器名称。安装后运行 `sudo vpsprobe` 可再次打开主菜单，`sudo vpsprobe-agent` 可直接打开探针管理子菜单。Agent 需要 Python 3.9+ 与 systemd。Agent 默认每 30 秒上报，并测试到 `1.1.1.1:443` 的 TCP 连接；如需修改探测目标，可在 systemd 服务环境中配置 `VPSPROBE_PROBE_HOST` 与 `VPSPROBE_PROBE_PORT`。
+有面板时，输入 `https://你的域名`、绑定码和机器名称，即可启动探针上报。如果还没有面板，地址处直接回车也能先安装探针程序；此时显示“等待绑定”，不会启动上报服务。面板准备好后运行 `sudo vpsprobe-agent rebind`，输入面板地址和一次性绑定码。安装后运行 `sudo vpsprobe` 可再次打开主菜单，`sudo vpsprobe-agent` 可直接打开探针管理子菜单。Agent 需要 Python 3.9+ 与 systemd。Agent 默认每 30 秒上报，并测试到 `1.1.1.1:443` 的 TCP 连接；如需修改探测目标，可在 systemd 服务环境中配置 `VPSPROBE_PROBE_HOST` 与 `VPSPROBE_PROBE_PORT`。
 
 ## 本地预览面板
 

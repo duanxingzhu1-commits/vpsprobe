@@ -113,8 +113,16 @@ bind_agent() {
     fi
     return 0
   fi
-  if [[ "$hub" != https://* && "$hub" != http://127.0.0.1:* && "$hub" != http://localhost:* ]]; then
-    echo '远程面板必须使用 HTTPS。探针已安装，可稍后重新绑定。' >&2
+  hub="${hub%/}"
+  if [[ "$hub" == http://127.0.0.1:* || "$hub" == http://localhost:* ]]; then
+    :
+  elif [[ "$hub" =~ ^http://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$ ]]; then
+    echo '当前使用公网 HTTP：绑定码和探针令牌会明文传输。'
+    local confirm
+    read -r -p '确认连接该 HTTP 面板？输入 YES: ' confirm
+    [[ "$confirm" == YES ]] || return 1
+  elif [[ "$hub" != https://* ]]; then
+    echo '请输入 HTTPS 地址，或明确确认公网 IP + HTTP 地址。' >&2
     return 1
   fi
   read -r -p "面板生成的一次性绑定码: " code

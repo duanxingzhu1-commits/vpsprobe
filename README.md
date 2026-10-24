@@ -6,29 +6,29 @@
 
 [KEJILION.SH](https://github.com/kejilion/sh) 是综合 Linux 管理工具箱，涵盖系统、Docker、建站、网络等操作。VPSProbe 借鉴“在终端用菜单完成安装和维护”的交互思路，但产品只围绕**多 VPS 集中监控**：Agent 接入、网络探测、按套餐账期记录流量、到期提醒和通知送达。菜单的状态页还会直接诊断面板连接与 TCP 探测目标。项目没有使用参考仓库的脚本源码、菜单文案或品牌资源。
 
-本地 ZIP 仍需先上传 VPS。将来在 GitHub 发布正式版本后，可以托管一个下载器，提供类似“一行启动”的命令；那只是下载入口，完整代码仍在仓库中。发布前要固定版本、校验下载文件并提供可审阅的安装脚本，不应把当前未发布的示例地址当成可用命令。
+源码已公开在 [GitHub 仓库](https://github.com/duanxingzhu1-commits/vpsprobe)。可在 VPS 上克隆后运行菜单；项目目前没有独立域名或一行式下载器。
 
 ## 在 VPS 部署面板
 
-准备一台 Linux VPS、指向这台 VPS 的域名，以及已安装的 Docker Engine、Docker Compose 插件、`unzip` 和 `openssl`。开放入站 TCP 80/443。域名解析和端口是 Caddy 自动申请证书的条件。安装 Docker 请遵循[官方文档](https://docs.docker.com/engine/install/)；不要运行来源不明的安装命令。
+准备一台 Linux VPS、指向这台 VPS 的域名，以及已安装的 Docker Engine、Docker Compose 插件、`git` 和 `openssl`。开放入站 TCP 80/443。域名解析和端口是 Caddy 自动申请证书的条件。安装 Docker 请遵循[官方文档](https://docs.docker.com/engine/install/)；不要运行来源不明的安装命令。
 
-**第一步：在存放 ZIP 的本机终端执行**（不要在 `root@vps...` 的 VPS 终端执行）。把 `YOUR_PUBLIC_IP` 换成 VPS 的真实公网 IP：
+**第一步：登录作为面板的 VPS**。在本机终端输入，换成 VPS 的真实公网 IP：
 
 ```bash
-scp ./vpsprobe-vps-deploy.zip root@YOUR_PUBLIC_IP:/root/
+ssh root@YOUR_PUBLIC_IP
 ```
 
-**第二步：回到已登录的 VPS 终端执行**。Debian/Ubuntu 缺少 `unzip` 时先安装；若已安装，该命令也安全：
+**第二步：在 VPS 终端执行**。Debian/Ubuntu 缺少 `git` 或 `openssl` 时先安装：
 
 ```bash
-apt update && apt install -y unzip openssl
+apt update && apt install -y git openssl
 cd /root
-unzip vpsprobe-vps-deploy.zip
+git clone https://github.com/duanxingzhu1-commits/vpsprobe.git
 cd vpsprobe
 bash deploy-hub.sh
 ```
 
-不要在 VPS 上使用本机文件路径。如果尚未登录 VPS，可以在本机终端运行 `ssh root@YOUR_PUBLIC_IP`。`YOUR_PUBLIC_IP` 是说明用占位符，不能原样输入。
+`YOUR_PUBLIC_IP` 是说明用占位符，不能原样输入。
 
 脚本要求输入面板域名，生成并显示一次管理员密码，写入权限为 600 的 `.env`，然后执行 `docker compose up -d --build`。打开 `https://你的域名` 登录。请妥善保存初始密码；不要把 `.env` 提交到 GitHub。修改 Telegram 或企业微信配置后，执行 `docker compose up -d` 让容器读取新值。
 
@@ -45,10 +45,10 @@ docker compose down
 
 ### 将其他 VPS 接入面板
 
-在面板点击“添加服务器”，复制一次性绑定码。将同一 ZIP 上传到每台要监控的 Linux VPS，然后：
+在面板点击“添加服务器”，复制一次性绑定码。在每台要监控的 Linux VPS 上运行：
 
 ```bash
-unzip vpsprobe-vps-deploy.zip
+git clone https://github.com/duanxingzhu1-commits/vpsprobe.git
 cd vpsprobe
 sudo bash vpsprobe.sh
 ```
@@ -90,7 +90,7 @@ VPSPROBE_WECOM_WEBHOOK=企业微信群机器人 Webhook URL
 - 网络探测为 Agent 到单个 TCP 目标的连接测试；多目标、多地点 ICMP/HTTP 探测还未实现。
 - Docker Compose 包含 Caddy HTTPS 反向代理；生产使用前仍需配置防火墙、备份、访问限制，并完成安全审查。
 - 卸载 Agent 保留面板历史。更新 Agent 需要把新版项目文件复制到 VPS，并在新版目录运行 `sudo bash vpsprobe.sh update`。
-- 尚未发布到 GitHub；项目代码和文档可作为后续开源仓库的基础。
+- 源码已公开；首次部署前请审阅安装脚本和配置。
 
 ## 项目文件
 
@@ -100,6 +100,6 @@ VPSPROBE_WECOM_WEBHOOK=企业微信群机器人 Webhook URL
 - `vpsprobe.sh`：VPS 终端数字菜单与 systemd 安装。
 - `Dockerfile`、`compose.yaml`、`Caddyfile`、`deploy-hub.sh`：面板 VPS 部署。
 
-## 开源前待办
+## 后续开发
 
-需要补齐账号和权限、更完整的 CSRF 与速率限制、告警去重与恢复、时区和账期规则、配置化网络探测、正式安装包及自动更新、备份恢复、更多测试与安全审查，再发布 GitHub 仓库。本机没有 Docker，Compose 容器启动和真实 VPS 安装尚未实测。
+需要补齐账号和权限、更完整的 CSRF 与速率限制、告警去重与恢复、时区和账期规则、配置化网络探测、正式安装包及自动更新、备份恢复、更多测试与安全审查。本机没有 Docker，Compose 容器启动和真实 VPS 安装尚未实测。

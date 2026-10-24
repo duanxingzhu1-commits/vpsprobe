@@ -78,7 +78,7 @@ install_hub() {
 }
 
 install_agent() {
-  ask '确认在本机安装并连接 VPSProbe 探针？[y/N]: ' || return
+  ask '确认在本机安装 VPSProbe 探针？可稍后绑定面板 [y/N]: ' || return
   [[ "$REPLY" == y || "$REPLY" == Y ]] || return
   bash "$SOURCE_DIR/vpsprobe.sh" install < /dev/tty
 }
@@ -129,7 +129,7 @@ show_status() {
     say '尚未配置'
   fi
   say '探针：'
-  if [[ -f /etc/vpsprobe/agent.json ]]; then
+  if [[ -f /opt/vpsprobe/agent/agent.py ]]; then
     bash "$SOURCE_DIR/vpsprobe.sh" status || true
   else
     say '尚未安装'
@@ -150,7 +150,7 @@ menu() {
 
 ━━━━━━━━━━ VPSProbe ━━━━━━━━━━
 1. 安装面板（集中查看所有 VPS）
-2. 安装并连接本机探针
+2. 安装本机探针（可稍后绑定面板）
 3. 探针管理（状态、日志、更新、卸载）
 4. 查看安装状态
 5. 安装 Docker 和 Compose（Debian/Ubuntu）

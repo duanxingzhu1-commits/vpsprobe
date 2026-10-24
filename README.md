@@ -16,7 +16,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprob
 
 ## 在 VPS 部署面板
 
-准备一台 Linux VPS、指向这台 VPS 的域名，以及 `curl`、`tar`、`openssl`。面板还需要 Docker Engine 和 Docker Compose 插件，可在菜单中选择安装（目前只支持 Debian/Ubuntu），或遵循[官方文档](https://docs.docker.com/engine/install/)自行安装。开放入站 TCP 80/443。域名解析和端口是 Caddy 自动申请证书的条件。
+准备一台 Linux VPS，以及 `curl`、`tar`、`openssl`。面板还需要 Docker Engine 和 Docker Compose 插件，可在菜单中选择安装（目前只支持 Debian/Ubuntu），或遵循[官方文档](https://docs.docker.com/engine/install/)自行安装。开放入站 TCP 80/443。可以输入已解析到 VPS 的自有域名；没有域名时输入 VPS 公网 IPv4，脚本会生成 `IP-地址.sslip.io` 域名。该方式依赖第三方 [sslip.io](https://sslip.io/) DNS 服务；公网 IP 变化后域名也需更换。Caddy 需要域名正确解析以及开放 80/443 才能申请 HTTPS 证书。
 
 **第一步：登录作为面板的 VPS**。在本机终端输入，换成 VPS 的真实公网 IP：
 
@@ -32,7 +32,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprob
 
 `YOUR_PUBLIC_IP` 是说明用占位符，不能原样输入。
 
-面板安装脚本要求输入域名，生成并显示一次管理员密码，写入权限为 600 的 `/opt/vpsprobe/hub/.env`，然后执行 `docker compose up -d --build`。打开 `https://你的域名` 登录。请妥善保存初始密码；不要把 `.env` 提交到 GitHub。修改 Telegram 或企业微信配置后，在 `/opt/vpsprobe/hub` 执行 `docker compose up -d` 让容器读取新值。
+面板安装脚本要求输入域名，或留空后输入公网 IPv4 生成测试域名。它生成并显示一次管理员密码，写入权限为 600 的 `/opt/vpsprobe/hub/.env`，然后执行 `docker compose up -d --build`。打开输出的 `https://面板域名` 登录。请妥善保存初始密码；不要把 `.env` 提交到 GitHub。修改 Telegram 或企业微信配置后，在 `/opt/vpsprobe/hub` 执行 `docker compose up -d` 让容器读取新值。
 
 常用命令：
 

@@ -37,11 +37,19 @@ if [[ ! -f .env ]]; then
       mode=http
       read -r -p '本 VPS 的公网 IPv4: ' ip
       valid_ipv4 "$ip" || { echo '公网 IPv4 格式不正确。' >&2; exit 1; }
-      read -r -p '面板对外端口 [8080]: ' port
-      port="${port:-8080}"
-      [[ "$port" =~ ^[0-9]+$ ]] && (( 10#$port >= 1 && 10#$port <= 65535 )) || {
-        echo '端口必须在 1 到 65535 之间。' >&2; exit 1;
-      }
+      while true; do
+        read -r -p '面板对外端口 [8080]: ' port
+        port="${port:-8080}"
+        if [[ ! "$port" =~ ^[0-9]+$ ]] || (( 10#$port < 1 || 10#$port > 65535 )); then
+          echo '端口必须在 1 到 65535 之间。' >&2
+          continue
+        fi
+        if command -v ss >/dev/null && [[ -n "$(ss -H -ltn "sport = :$port" 2>/dev/null)" ]]; then
+          echo "端口 $port 已被占用，请换一个（例如 8081）。" >&2
+          continue
+        fi
+        break
+      done
       echo "将使用 http://$ip:$port。HTTP 会明文传输登录密码与探针令牌，仅建议临时测试。"
       read -r -p '确认使用 IP + HTTP？输入 YES: ' answer
       [[ "$answer" == YES ]] || { echo '已取消面板部署。'; exit 0; }

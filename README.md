@@ -24,7 +24,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprob
 ssh root@YOUR_PUBLIC_IP
 ```
 
-**第二步：在 VPS 终端执行**。先进入菜单，选择 `5` 安装 Docker（如尚未安装），然后选择 `1` 安装面板：
+**第二步：在 VPS 终端执行**。进入菜单选择 `1` 安装面板；如果缺少 Docker，脚本会先询问是否安装（Debian/Ubuntu）：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprobe/main/install.sh)

@@ -6,11 +6,17 @@
 
 [KEJILION.SH](https://github.com/kejilion/sh) 是综合 Linux 管理工具箱，涵盖系统、Docker、建站、网络等操作。VPSProbe 借鉴“在终端用菜单完成安装和维护”的交互思路，但产品只围绕**多 VPS 集中监控**：Agent 接入、网络探测、按套餐账期记录流量、到期提醒和通知送达。菜单的状态页还会直接诊断面板连接与 TCP 探测目标。项目没有使用参考仓库的脚本源码、菜单文案或品牌资源。
 
-源码已公开在 [GitHub 仓库](https://github.com/duanxingzhu1-commits/vpsprobe)。可在 VPS 上克隆后运行菜单；项目目前没有独立域名或一行式下载器。
+源码已公开在 [GitHub 仓库](https://github.com/duanxingzhu1-commits/vpsprobe)。在 VPS 的 Bash 终端运行以下命令，会先询问是否继续，然后显示安装菜单：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprobe/main/install.sh)
+```
+
+首次确认后脚本会从 GitHub 下载源码，并保存本机菜单命令 `vpsprobe`。菜单可选择安装面板、安装并连接本机探针、探针管理、状态查看、安装 Docker/Compose（Debian/Ubuntu）及更新源码。再次打开菜单运行 `sudo vpsprobe`。入口源码可先在仓库中审阅；它是下载入口，完整程序仍在仓库中。
 
 ## 在 VPS 部署面板
 
-准备一台 Linux VPS、指向这台 VPS 的域名，以及已安装的 Docker Engine、Docker Compose 插件、`git` 和 `openssl`。开放入站 TCP 80/443。域名解析和端口是 Caddy 自动申请证书的条件。安装 Docker 请遵循[官方文档](https://docs.docker.com/engine/install/)；不要运行来源不明的安装命令。
+准备一台 Linux VPS、指向这台 VPS 的域名，以及 `curl`、`tar`、`openssl`。面板还需要 Docker Engine 和 Docker Compose 插件，可在菜单中选择安装（目前只支持 Debian/Ubuntu），或遵循[官方文档](https://docs.docker.com/engine/install/)自行安装。开放入站 TCP 80/443。域名解析和端口是 Caddy 自动申请证书的条件。
 
 **第一步：登录作为面板的 VPS**。在本机终端输入，换成 VPS 的真实公网 IP：
 
@@ -18,23 +24,20 @@
 ssh root@YOUR_PUBLIC_IP
 ```
 
-**第二步：在 VPS 终端执行**。Debian/Ubuntu 缺少 `git` 或 `openssl` 时先安装：
+**第二步：在 VPS 终端执行**。先进入菜单，选择 `5` 安装 Docker（如尚未安装），然后选择 `1` 安装面板：
 
 ```bash
-apt update && apt install -y git openssl
-cd /root
-git clone https://github.com/duanxingzhu1-commits/vpsprobe.git
-cd vpsprobe
-bash deploy-hub.sh
+bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprobe/main/install.sh)
 ```
 
 `YOUR_PUBLIC_IP` 是说明用占位符，不能原样输入。
 
-脚本要求输入面板域名，生成并显示一次管理员密码，写入权限为 600 的 `.env`，然后执行 `docker compose up -d --build`。打开 `https://你的域名` 登录。请妥善保存初始密码；不要把 `.env` 提交到 GitHub。修改 Telegram 或企业微信配置后，执行 `docker compose up -d` 让容器读取新值。
+面板安装脚本要求输入域名，生成并显示一次管理员密码，写入权限为 600 的 `/opt/vpsprobe/hub/.env`，然后执行 `docker compose up -d --build`。打开 `https://你的域名` 登录。请妥善保存初始密码；不要把 `.env` 提交到 GitHub。修改 Telegram 或企业微信配置后，在 `/opt/vpsprobe/hub` 执行 `docker compose up -d` 让容器读取新值。
 
 常用命令：
 
 ```bash
+cd /opt/vpsprobe/hub
 docker compose ps
 docker compose logs -f --tail=100
 docker compose restart
@@ -45,15 +48,13 @@ docker compose down
 
 ### 将其他 VPS 接入面板
 
-在面板点击“添加服务器”，复制一次性绑定码。在每台要监控的 Linux VPS 上运行：
+在面板点击“添加服务器”，复制一次性绑定码。在每台要监控的 Linux VPS 上运行同一入口命令，然后选择 `2` 安装探针：
 
 ```bash
-git clone https://github.com/duanxingzhu1-commits/vpsprobe.git
-cd vpsprobe
-sudo bash vpsprobe.sh
+bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprobe/main/install.sh)
 ```
 
-选择菜单 `1`，输入 `https://你的域名`、绑定码和机器名称。安装后运行 `sudo vpsprobe` 可再次打开菜单。Agent 需要 Python 3.9+ 与 systemd。Agent 默认每 30 秒上报，并测试到 `1.1.1.1:443` 的 TCP 连接；如需修改探测目标，可在 systemd 服务环境中配置 `VPSPROBE_PROBE_HOST` 与 `VPSPROBE_PROBE_PORT`。
+输入 `https://你的域名`、绑定码和机器名称。安装后运行 `sudo vpsprobe` 可再次打开主菜单，`sudo vpsprobe-agent` 可直接打开探针管理子菜单。Agent 需要 Python 3.9+ 与 systemd。Agent 默认每 30 秒上报，并测试到 `1.1.1.1:443` 的 TCP 连接；如需修改探测目标，可在 systemd 服务环境中配置 `VPSPROBE_PROBE_HOST` 与 `VPSPROBE_PROBE_PORT`。
 
 ## 本地预览面板
 
@@ -97,7 +98,8 @@ VPSPROBE_WECOM_WEBHOOK=企业微信群机器人 Webhook URL
 - `server.py`：面板、API、SQLite 和提醒逻辑。
 - `index.html`：响应式监控界面。
 - `agent.py`：Linux 指标采集与网络探测。
-- `vpsprobe.sh`：VPS 终端数字菜单与 systemd 安装。
+- `install.sh`：公开的一行式入口、首次确认与主菜单。
+- `vpsprobe.sh`：探针管理子菜单与 systemd 安装。
 - `Dockerfile`、`compose.yaml`、`Caddyfile`、`deploy-hub.sh`：面板 VPS 部署。
 
 ## 后续开发

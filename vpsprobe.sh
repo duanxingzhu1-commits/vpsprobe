@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-INSTALL_DIR=/opt/vpsprobe
+INSTALL_DIR=/opt/vpsprobe/agent
 CONFIG=/etc/vpsprobe/agent.json
 SERVICE=/etc/systemd/system/vpsprobe-agent.service
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,24 +23,15 @@ install_agent() {
   fi
   command -v python3 >/dev/null || { echo "请先安装 Python 3.9+" >&2; return 1; }
   if [[ -f "$CONFIG" ]]; then
-    echo "Agent 已安装，请使用更新或重新绑定菜单。"
+    echo "探针已安装并绑定。可在探针管理菜单查看状态或重新绑定。"
     return
   fi
-  read -r -p "面板地址 (https://...): " hub
-  if [[ "$hub" != https://* && "$hub" != http://127.0.0.1:* && "$hub" != http://localhost:* ]]; then
-    echo "远程面板必须使用 HTTPS。" >&2
-    return 1
-  fi
-  read -r -p "面板生成的一次性绑定码: " code
-  read -r -p "机器名称 [$(hostname)]: " name
-  name="${name:-$(hostname)}"
   install -d -m 700 "$INSTALL_DIR" /etc/vpsprobe
   [[ -f "$AGENT_SOURCE" ]] || { echo "找不到 agent.py，请从项目目录运行脚本。" >&2; return 1; }
   if [[ "$AGENT_SOURCE" != "$INSTALL_DIR/agent.py" ]]; then
     install -m 755 "$AGENT_SOURCE" "$INSTALL_DIR/agent.py"
   fi
   install -m 755 "$SOURCE_DIR/vpsprobe.sh" /usr/local/bin/vpsprobe-agent
-  python3 "$INSTALL_DIR/agent.py" register --hub "$hub" --code "$code" --name "$name"
   cat > "$SERVICE" <<'EOF'
 [Unit]
 Description=VPSProbe Agent
@@ -49,7 +40,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/env python3 /opt/vpsprobe/agent.py run
+ExecStart=/usr/bin/env python3 /opt/vpsprobe/agent/agent.py run
 Restart=always
 RestartSec=10
 NoNewPrivileges=true
@@ -61,12 +52,20 @@ ReadWritePaths=/etc/vpsprobe
 WantedBy=multi-user.target
 EOF
   systemctl daemon-reload
-  systemctl enable --now vpsprobe-agent
-  echo "安装完成。"
-  systemctl --no-pager --full status vpsprobe-agent | head -18 || true
+  echo "探针程序已安装到 $INSTALL_DIR。"
+  echo '如果面板尚未部署，可直接回车；之后运行 sudo vpsprobe-agent rebind 完成连接。'
+  bind_agent
 }
 
 status_agent() {
+  if [[ ! -f "$INSTALL_DIR/agent.py" ]]; then
+    echo '探针尚未安装。'
+    return
+  fi
+  if [[ ! -f "$CONFIG" ]]; then
+    echo '探针已安装，等待绑定面板。运行 sudo vpsprobe-agent rebind。'
+    return
+  fi
   if [[ -f "$CONFIG" ]]; then
     python3 "$INSTALL_DIR/agent.py" diagnose || true
     echo
@@ -76,7 +75,7 @@ status_agent() {
 
 diagnose_agent() {
   if [[ ! -f "$CONFIG" ]]; then
-    echo "尚未安装 Agent。请先选择 1。"
+    echo '探针尚未绑定面板。请在探针管理菜单选择 4。'
     return
   fi
   python3 "$INSTALL_DIR/agent.py" diagnose
@@ -84,7 +83,7 @@ diagnose_agent() {
 
 update_agent() {
   need_root
-  [[ -f "$CONFIG" ]] || { echo "尚未安装 Agent。"; return; }
+  [[ -f "$INSTALL_DIR/agent.py" ]] || { echo "尚未安装探针。"; return; }
   if [[ "$AGENT_SOURCE" == "$INSTALL_DIR/agent.py" ]]; then
     echo "请下载新版项目文件，并在其目录运行 sudo bash vpsprobe.sh update。"
     return 1
@@ -97,34 +96,50 @@ update_agent() {
     echo "更新失败，已恢复旧版本。" >&2
     return 1
   fi
-  systemctl restart vpsprobe-agent
+  if [[ -f "$CONFIG" ]]; then systemctl restart vpsprobe-agent; fi
   echo "Agent 已更新。"
 }
 
-rebind_agent() {
+bind_agent() {
   need_root
-  [[ -f "$CONFIG" ]] || { echo "尚未安装 Agent。"; return 1; }
-  read -r -p "新面板地址 (https://...): " hub
+  [[ -f "$INSTALL_DIR/agent.py" ]] || { echo '请先安装探针。'; return 1; }
+  local hub code name staged
+  read -r -p "面板地址 (https://...，暂无面板可直接回车): " hub
+  if [[ -z "$hub" ]]; then
+    if [[ -f "$CONFIG" ]]; then
+      echo '已取消重新绑定，现有连接保持不变。'
+    else
+      echo '探针已安装，等待绑定面板；服务暂不启动。'
+    fi
+    return 0
+  fi
   if [[ "$hub" != https://* && "$hub" != http://127.0.0.1:* && "$hub" != http://localhost:* ]]; then
-    echo "远程面板必须使用 HTTPS。" >&2
+    echo '远程面板必须使用 HTTPS。探针已安装，可稍后重新绑定。' >&2
     return 1
   fi
-  read -r -p "新面板的一次性绑定码: " code
+  read -r -p "面板生成的一次性绑定码: " code
+  if [[ -z "$code" ]]; then
+    echo '绑定码为空；探针已安装，可稍后重新绑定。'
+    return 0
+  fi
   read -r -p "机器名称 [$(hostname)]: " name
   name="${name:-$(hostname)}"
-  local staged="${CONFIG}.new"
+  staged="${CONFIG}.new"
   if VPSPROBE_AGENT_CONFIG="$staged" python3 "$INSTALL_DIR/agent.py" register --hub "$hub" --code "$code" --name "$name"; then
-    cp "$CONFIG" "${CONFIG}.bak.$(date +%s)"
+    if [[ -f "$CONFIG" ]]; then cp "$CONFIG" "${CONFIG}.bak.$(date +%s)"; fi
     mv "$staged" "$CONFIG"
     chmod 600 "$CONFIG"
+    systemctl enable --now vpsprobe-agent
     systemctl restart vpsprobe-agent
-    echo "已重新绑定。旧配置保存在 /etc/vpsprobe。"
+    echo '探针已绑定并启动。'
   else
     rm -f "$staged"
-    echo "绑定失败，原配置保持不变。" >&2
+    echo '绑定失败。探针程序保留，原配置保持不变，可稍后重试。' >&2
     return 1
   fi
 }
+
+rebind_agent() { bind_agent; }
 
 uninstall_agent() {
   need_root
@@ -144,7 +159,7 @@ menu() {
 
 VPSProbe 探针管理
 ──────────────────────────
-1. 安装并连接本机 Agent
+1. 安装本机探针（可稍后绑定面板）
 2. 查看运行状态
 3. 更新 Agent
 4. 修改面板地址 / 重新绑定

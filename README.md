@@ -16,7 +16,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprob
 
 ## 在 VPS 部署面板
 
-准备一台 Linux VPS，以及 `curl`、`tar`、`openssl`。面板还需要 Docker Engine 和 Docker Compose 插件，可在菜单中选择安装（目前只支持 Debian/Ubuntu），或遵循[官方文档](https://docs.docker.com/engine/install/)自行安装。安装面板时可以选两种访问方式：`1` 公网 IP + 端口（HTTP，临时测试），或 `2` 域名 + HTTPS（长期使用）。HTTPS 可使用已解析到 VPS 的自有域名；没有域名时输入公网 IPv4，脚本会生成 `IP-地址.sslip.io` 域名。该方式依赖第三方 [sslip.io](https://sslip.io/) DNS 服务；公网 IP 变化后域名也需更换。HTTPS 需要开放 80/443 供 Caddy 申请证书；HTTP 模式需要开放所选端口。
+准备一台 Linux VPS，以及 `curl`、`tar`、`openssl`。面板还需要 Docker Engine 和 Docker Compose 插件，可在菜单中选择安装（目前只支持 Debian/Ubuntu），或遵循[官方文档](https://docs.docker.com/engine/install/)自行安装。安装面板时可以选两种访问方式：`1` 公网 IP + 端口（HTTP，临时测试），或 `2` 域名 + HTTPS（长期使用）。IP + 端口模式默认使用 8080；如果已有程序占用 8080，输入其他端口（如 8081），脚本会检查监听端口。HTTPS 可使用已解析到 VPS 的自有域名；没有域名时输入公网 IPv4，脚本会生成 `IP-地址.sslip.io` 域名。该方式依赖第三方 [sslip.io](https://sslip.io/) DNS 服务；公网 IP 变化后域名也需更换。HTTPS 需要开放 80/443 供 Caddy 申请证书；HTTP 模式需要开放所选端口。
 
 **第一步：登录作为面板的 VPS**。在本机终端输入，换成 VPS 的真实公网 IP：
 

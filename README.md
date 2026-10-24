@@ -16,7 +16,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprob
 
 ## 在 VPS 部署面板
 
-准备一台 Linux VPS，以及 `curl`、`tar`、`openssl`。面板还需要 Docker Engine 和 Docker Compose 插件，可在菜单中选择安装（目前只支持 Debian/Ubuntu），或遵循[官方文档](https://docs.docker.com/engine/install/)自行安装。开放入站 TCP 80/443。可以输入已解析到 VPS 的自有域名；没有域名时输入 VPS 公网 IPv4，脚本会生成 `IP-地址.sslip.io` 域名。该方式依赖第三方 [sslip.io](https://sslip.io/) DNS 服务；公网 IP 变化后域名也需更换。Caddy 需要域名正确解析以及开放 80/443 才能申请 HTTPS 证书。
+准备一台 Linux VPS，以及 `curl`、`tar`、`openssl`。面板还需要 Docker Engine 和 Docker Compose 插件，可在菜单中选择安装（目前只支持 Debian/Ubuntu），或遵循[官方文档](https://docs.docker.com/engine/install/)自行安装。安装面板时可以选两种访问方式：`1` 公网 IP + 端口（HTTP，临时测试），或 `2` 域名 + HTTPS（长期使用）。HTTPS 可使用已解析到 VPS 的自有域名；没有域名时输入公网 IPv4，脚本会生成 `IP-地址.sslip.io` 域名。该方式依赖第三方 [sslip.io](https://sslip.io/) DNS 服务；公网 IP 变化后域名也需更换。HTTPS 需要开放 80/443 供 Caddy 申请证书；HTTP 模式需要开放所选端口。
 
 **第一步：登录作为面板的 VPS**。在本机终端输入，换成 VPS 的真实公网 IP：
 
@@ -32,7 +32,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprob
 
 `YOUR_PUBLIC_IP` 是说明用占位符，不能原样输入。
 
-面板安装脚本要求输入域名，或留空后输入公网 IPv4 生成测试域名。它生成并显示一次管理员密码，写入权限为 600 的 `/opt/vpsprobe/hub/.env`，然后执行 `docker compose up -d --build`。打开输出的 `https://面板域名` 登录。请妥善保存初始密码；不要把 `.env` 提交到 GitHub。修改 Telegram 或企业微信配置后，在 `/opt/vpsprobe/hub` 执行 `docker compose up -d` 让容器读取新值。
+面板安装脚本要求选择访问方式，生成并显示一次管理员密码，写入权限为 600 的 `/opt/vpsprobe/hub/.env`，然后启动容器。浏览器打开脚本输出的面板地址登录。请妥善保存初始密码；不要把 `.env` 提交到 GitHub。IP + HTTP 模式下登录密码、绑定码和探针令牌会明文传输，仅用于临时测试。修改 Telegram 或企业微信配置后，在 `/opt/vpsprobe/hub` 执行 `docker compose up -d hub`（HTTP）或 `docker compose up -d`（HTTPS）让容器读取新值。
 
 常用命令：
 
@@ -54,7 +54,7 @@ docker compose down
 bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprobe/main/install.sh)
 ```
 
-有面板时，输入 `https://你的域名`、绑定码和机器名称，即可启动探针上报。如果还没有面板，地址处直接回车也能先安装探针程序；此时显示“等待绑定”，不会启动上报服务。面板准备好后运行 `sudo vpsprobe-agent rebind`，输入面板地址和一次性绑定码。安装后运行 `sudo vpsprobe` 可再次打开主菜单，`sudo vpsprobe-agent` 可直接打开探针管理子菜单。Agent 需要 Python 3.9+ 与 systemd。Agent 默认每 30 秒上报，并测试到 `1.1.1.1:443` 的 TCP 连接；如需修改探测目标，可在 systemd 服务环境中配置 `VPSPROBE_PROBE_HOST` 与 `VPSPROBE_PROBE_PORT`。
+有面板时，输入脚本输出的面板地址（`https://域名` 或 `http://公网IP:端口`）、绑定码和机器名称，即可启动探针上报。公网 HTTP 地址需要再次输入 `YES` 确认明文传输。如果还没有面板，地址处直接回车也能先安装探针程序；此时显示“等待绑定”，不会启动上报服务。面板准备好后运行 `sudo vpsprobe-agent rebind`，输入面板地址和一次性绑定码。安装后运行 `sudo vpsprobe` 可再次打开主菜单，`sudo vpsprobe-agent` 可直接打开探针管理子菜单。Agent 需要 Python 3.9+ 与 systemd。Agent 默认每 30 秒上报，并测试到 `1.1.1.1:443` 的 TCP 连接；如需修改探测目标，可在 systemd 服务环境中配置 `VPSPROBE_PROBE_HOST` 与 `VPSPROBE_PROBE_PORT`。
 
 ## 本地预览面板
 

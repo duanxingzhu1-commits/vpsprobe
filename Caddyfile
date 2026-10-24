@@ -1,0 +1,5 @@
+{$VPSPROBE_DOMAIN} {
+    encode zstd gzip
+    reverse_proxy hub:8765
+}
+

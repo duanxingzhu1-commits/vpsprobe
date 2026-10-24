@@ -6,11 +6,13 @@ services:
       VPSPROBE_HOST: "0.0.0.0"
       VPSPROBE_PORT: "8765"
       VPSPROBE_DB: /data/vpsprobe.db
-      VPSPROBE_PUBLIC_HTTPS: "1"
+      VPSPROBE_PUBLIC_HTTPS: ${VPSPROBE_PUBLIC_HTTPS:-1}
     volumes:
       - hub_data:/data
     expose:
       - "8765"
+    ports:
+      - "${VPSPROBE_HTTP_BIND:-127.0.0.1}:${VPSPROBE_HTTP_PORT:-8765}:8765"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/health', timeout=3)"]
@@ -21,7 +23,7 @@ services:
   caddy:
     image: caddy:2
     environment:
-      VPSPROBE_DOMAIN: ${VPSPROBE_DOMAIN:?Set VPSPROBE_DOMAIN in .env}
+      VPSPROBE_DOMAIN: ${VPSPROBE_DOMAIN:-localhost}
     ports:
       - "80:80"
       - "443:443"

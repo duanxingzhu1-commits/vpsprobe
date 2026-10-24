@@ -39,9 +39,7 @@ install_agent() {
   if [[ "$AGENT_SOURCE" != "$INSTALL_DIR/agent.py" ]]; then
     install -m 755 "$AGENT_SOURCE" "$INSTALL_DIR/agent.py"
   fi
-  if [[ "$SOURCE_DIR/vpsprobe.sh" != /usr/local/bin/vpsprobe ]]; then
-    install -m 755 "$SOURCE_DIR/vpsprobe.sh" /usr/local/bin/vpsprobe
-  fi
+  install -m 755 "$SOURCE_DIR/vpsprobe.sh" /usr/local/bin/vpsprobe-agent
   python3 "$INSTALL_DIR/agent.py" register --hub "$hub" --code "$code" --name "$name"
   cat > "$SERVICE" <<'EOF'
 [Unit]
@@ -93,7 +91,7 @@ update_agent() {
   fi
   cp "$INSTALL_DIR/agent.py" "$INSTALL_DIR/agent.py.bak"
   install -m 755 "$AGENT_SOURCE" "$INSTALL_DIR/agent.py"
-  install -m 755 "$SOURCE_DIR/vpsprobe.sh" /usr/local/bin/vpsprobe
+  install -m 755 "$SOURCE_DIR/vpsprobe.sh" /usr/local/bin/vpsprobe-agent
   if ! python3 -m py_compile "$INSTALL_DIR/agent.py"; then
     mv "$INSTALL_DIR/agent.py.bak" "$INSTALL_DIR/agent.py"
     echo "更新失败，已恢复旧版本。" >&2
@@ -134,7 +132,7 @@ uninstall_agent() {
   [[ "$answer" == YES ]] || return
   systemctl disable --now vpsprobe-agent 2>/dev/null || true
   rm -f "$SERVICE" "$CONFIG"
-  rm -f /usr/local/bin/vpsprobe
+  rm -f /usr/local/bin/vpsprobe-agent
   rm -rf "$INSTALL_DIR"
   systemctl daemon-reload
   echo "Agent 已卸载；面板历史数据仍保留。"

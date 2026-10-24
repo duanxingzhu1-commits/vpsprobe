@@ -32,7 +32,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/duanxingzhu1-commits/vpsprob
 
 `YOUR_PUBLIC_IP` 是说明用占位符，不能原样输入。
 
-面板安装脚本要求选择访问方式，生成并显示一次管理员密码，写入权限为 600 的 `/opt/vpsprobe/hub/.env`，然后启动容器。浏览器打开脚本输出的面板地址登录。请妥善保存初始密码；不要把 `.env` 提交到 GitHub。IP + HTTP 模式下登录密码、绑定码和探针令牌会明文传输，仅用于临时测试。修改 Telegram 或企业微信配置后，在 `/opt/vpsprobe/hub` 执行 `docker compose up -d hub`（HTTP）或 `docker compose up -d`（HTTPS）让容器读取新值。
+面板安装脚本要求选择访问方式，生成一次管理员密码，写入权限为 600 的 `/opt/vpsprobe/hub/.env`，然后启动容器并等待本机健康检查通过。完成页集中显示访问地址和管理员初始密码；浏览器打开该地址，用密码登录，再在面板中生成探针绑定码。请妥善保存初始密码；不要把 `.env` 提交到 GitHub。IP + HTTP 模式下登录密码、绑定码和探针令牌会明文传输，仅用于临时测试。修改 Telegram 或企业微信配置后，在 `/opt/vpsprobe/hub` 执行 `docker compose up -d hub`（HTTP）或 `docker compose up -d`（HTTPS）让容器读取新值。
 
 常用命令：
 

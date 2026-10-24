@@ -72,6 +72,18 @@ install_hub() {
     ask '确认在本机安装 VPSProbe 面板？[y/N]: ' || return
     [[ "$REPLY" == y || "$REPLY" == Y ]] || return
   fi
+  if ! command -v docker >/dev/null || ! docker compose version >/dev/null 2>&1; then
+    say '检测到缺少 Docker Engine 或 Compose。'
+    docker_install || return 1
+    if ! command -v docker >/dev/null || ! docker compose version >/dev/null 2>&1; then
+      say 'Docker 尚未安装，面板部署已停止。' >&2
+      return 1
+    fi
+  fi
+  if ! command -v openssl >/dev/null; then
+    say '缺少 openssl。请先安装 openssl 后再试。' >&2
+    return 1
+  fi
   install -d -m 755 "$HUB_DIR"
   cp -a "$SOURCE_DIR/." "$HUB_DIR/"
   (cd "$HUB_DIR" && bash deploy-hub.sh < /dev/tty)

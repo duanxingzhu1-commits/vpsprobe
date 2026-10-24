@@ -26,6 +26,7 @@ valid_ipv4() {
   done
 }
 
+initial_password=''
 if [[ ! -f .env ]]; then
   echo '选择面板访问方式：'
   echo '1. 公网 IP + 端口（HTTP，方便测试）'
@@ -70,6 +71,7 @@ if [[ ! -f .env ]]; then
     *) echo '无效选项。' >&2; exit 1 ;;
   esac
   password="$(openssl rand -hex 18)"
+  initial_password="$password"
   cookie_key="$(openssl rand -hex 32)"
   umask 077
   cat > .env <<EOF
@@ -106,11 +108,34 @@ fi
 echo
 echo "容器状态："
 docker compose ps
+healthy=0
+for _ in {1..20}; do
+  if docker compose exec -T hub python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/health', timeout=2)" >/dev/null 2>&1; then
+    healthy=1
+    break
+  fi
+  sleep 2
+done
+if [[ "$healthy" != 1 ]]; then
+  echo '面板容器尚未通过健康检查，请查看日志：docker compose logs --tail=100 hub' >&2
+  exit 1
+fi
+echo
+echo '━━━━━━━━ VPSProbe 面板已启动 ━━━━━━━━'
 if [[ "$mode" == http ]]; then
-  echo "面板地址：http://$ip:$port"
+  echo "访问地址：http://$ip:$port"
   echo "请放行 TCP $port；HTTP 模式会明文传输密码和令牌。"
 else
   echo '首次申请 HTTPS 证书可能需要一段时间。请确认域名解析和 80/443 端口开放。'
-  echo "面板地址：https://$domain"
+  echo "访问地址：https://$domain"
 fi
+if [[ -n "$initial_password" ]]; then
+  echo "管理员初始密码：$initial_password"
+  echo '请立即保存密码；再次运行安装脚本不会重复显示。'
+  echo '请勿公开包含密码的安装截图。'
+else
+  echo '沿用原管理员密码；本次不显示密码。'
+fi
+echo '登录后在面板点击“添加服务器”获取探针绑定码。'
+echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
 echo "查看日志：docker compose logs -f --tail=100"
